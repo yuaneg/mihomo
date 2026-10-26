@@ -186,7 +186,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 workflow_id: 'docker-build.yml',
-                ref: 'main',
+                ref: 'master',
               });
               console.log('Docker Build workflow triggered successfully.');
             } catch (error) {

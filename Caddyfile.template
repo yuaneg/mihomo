@@ -5,7 +5,7 @@
     }
 }
 
-:8080 {
+:${CONTROL_PORT} {
     # 服务器级别的日志配置
     log {
         output stdout
@@ -38,18 +38,27 @@
         file_server
     }
 
-    # API 路由 - 使用路径重写
-    handle /api/* {
-        # 重写路径：移除 /api 前缀
-        rewrite * /{path.import}
-        
-        reverse_proxy localhost:9090 {
+    # mihomo API 匹配器：排除所有前端静态文件路径，其余全部转发到 mihomo
+    @mihomo_api {
+        not {
+            path / /index.html /config.js /sw.js /manifest.webmanifest
+            path /favicon.ico /favicon.svg
+            path /apple-touch-icon-180x180.png /maskable-icon-512x512.png
+            path /pwa-64x64.png /pwa-192x192.png /pwa-512x512.png
+            path /200.html /404.html
+            path /_nuxt/* /_fonts/*
+            path /workbox-*
+        }
+    }
+
+    # mihomo API 反向代理（所有非前端静态文件的路径都转发到 mihomo）
+    handle @mihomo_api {
+        reverse_proxy localhost:${API_PORT} {
             header_up Host {host}
             header_up X-Real-IP {remote}
             flush_interval -1
         }
 
-        # API 特定头
         header {
             Access-Control-Allow-Origin "*"
             Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
@@ -58,9 +67,8 @@
         }
     }
 
-    # 静态文件服务
+    # 前端静态文件服务
     handle {
-        # 文件服务器配置
         file_server {
             precompressed gzip zstd
         }

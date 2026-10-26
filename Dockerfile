@@ -57,6 +57,7 @@ ENV LOG_LEVEL="info"
 ENV CLASH_SECRET=""
 ENV SUBSCRIBE_NAME="default"
 ENV SUBSCRIBE_URL=""
+ENV CONTROL_PORT="80"
 
 # 将版本信息固化为镜像标签（Config Labels）
 LABEL org.opencontainers.image.title="mihomo" \
@@ -81,18 +82,18 @@ WORKDIR /srv
 COPY --from=frontend-builder /build/final/ ./
 
 # 复制应用配置文件
-COPY Caddyfile .
+COPY Caddyfile.template /app/Caddyfile.template
 COPY config.yaml.template /app/config.yaml.template
+COPY config.js.template /app/config.js.template
 COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh \
-    && caddy fmt --overwrite /srv/Caddyfile
+RUN chmod +x /docker-entrypoint.sh
 
 # 暴露端口
-EXPOSE 7890 7891 7892 7893 7894 9090 8080
+EXPOSE 7890 7891 7892 7893 7894 9090 80
 
 # 健康检查（检查Web服务）
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/ || exit 1
+    CMD curl -f http://localhost:80/ || exit 1
 
 # 使用自定义入口点脚本
 ENTRYPOINT ["/docker-entrypoint.sh"]
